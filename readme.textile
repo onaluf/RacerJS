@@ -1,0 +1,16 @@
+h1. Racer 10k
+
+h2. About
+
+This game is a tribute to the Lotus series developed by Magnetic Fields. To drive simply use up/down to accelerate/break and left/right to steer.
+
+The goal is to drive through the race in as little time as possible. Each time you start the game again the racer is generated randomly. At the end your race you will be offered the possibility to tweet your result.
+
+h2.  Performances
+
+The game uses CSS Transform to make the display full-screen. This is very fast in Safari since it's hardware accelerated but can be sometime slow in Firefox and Chrome, so don't hesitate to resize the window if you find the game too slow. This zoom is disabled in IE9.
+
+
+h2. License
+
+The code is under a MIT license (http://en.wikipedia.org/wiki/MIT_License) and the art under a Creative Commons Attribution-ShareAlike license (http://creativecommons.org/licenses/by-sa/3.0)
