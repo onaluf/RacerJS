@@ -14,11 +14,11 @@ var game = (function(){
     
     var roadParam = {
         maxHeight: 900,
-        maxCurve:  300,
-        length:    3000,
+        maxCurve:  400,
+        length:    12,
         curvy:     0.8,
         mountainy: 0.8,
-        zoneSize:  150
+        zoneSize:  250
     }
         
     var road = [];
@@ -39,7 +39,7 @@ var game = (function(){
         acceleration: 0.05,
         deceleration: 0.3,
         breaking: 0.6,
-        turning: 2.5,
+        turning: 5.0,
         posx: 0,
         maxSpeed: 15
     };
@@ -48,40 +48,40 @@ var game = (function(){
     var gameInterval;
     
     var car = { 
-        x: 161,
-        y: 0,
+        x: 0,
+        y: 130,
         w: 69,
         h: 38
     };
     var car_4 = { 
-        x: 231,
-        y: 0,
+        x: 70,
+        y: 130,
         w: 77,
         h: 38
     };
     var car_8 = { 
-        x: 309,
-        y: 0,
+        x: 148,
+        y: 130,
         w: 77,
         h: 38
     };
     
     var background = {
         x: 0,
-        y: 0,
-        w: 160,
-        h: 60
+        y: 9,
+        w: 320,
+        h: 120
     };
     
     var tree = {
-        x: 387,
-        y: 0,
+        x: 321,
+        y: 9,
         w: 23,
         h: 50
     };
     var rock = {
-        x: 411,
-        y: 0,
+        x: 345,
+        y: 9,
         w: 11,
         h: 14
     };
@@ -123,7 +123,7 @@ var game = (function(){
         context.fillStyle = "rgb(0,0,0)";
         context.fillRect(0, 0, render.width, render.height);
         
-        context.drawImage(spritesheet,  161, 39, 115, 20, 100, 20, 115, 40);
+        context.drawImage(spritesheet,  357, 9, 115, 20, 100, 20, 115, 40);
         
         drawString("Instructions:",{x: 100, y: 90});
         drawString("space to start, arrows to drive",{x: 30, y: 100});
@@ -228,7 +228,7 @@ var game = (function(){
         
         var baseOffset                 =  currentSegment.curve + (road[(currentSegmentIndex + 1) % road.length].curve - currentSegment.curve) * playerPosRelative;
         
-        lastDelta = player.posx - baseOffset;
+        lastDelta = player.posx - baseOffset*2;
         
         var iter = render.depthOfField;
         while (iter--) {
@@ -257,7 +257,7 @@ var game = (function(){
             if(currentSegment.sprite){
                 spriteBuffer.push({
                     y: render.height / 2 + startProjectedHeight, 
-                    x: render.width / 2 - currentSegment.sprite.pos * render.width * currentScaling + /* */currentSegment.curve - baseOffset - (player.posx - baseOffset) * currentScaling,
+                    x: render.width / 2 - currentSegment.sprite.pos * render.width * currentScaling + /* */currentSegment.curve - baseOffset - (player.posx - baseOffset*2) * currentScaling,
                     ymax: render.height / 2 + lastProjectedHeight, 
                     s: 2.5*currentScaling, 
                     i: currentSegment.sprite.type});
@@ -368,17 +368,17 @@ var game = (function(){
     }
     
     var drawBackground = function(position) {
-        var first = position / 2 % (background.w * 2);
-        drawImage(background, first-background.w * 2 +1, 0, 2);
-        drawImage(background, first+background.w * 2 -1, 0, 2);
-        drawImage(background, first, 0, 2);
+        var first = position / 2 % (background.w);
+        drawImage(background, first-background.w +1, 0, 1);
+        drawImage(background, first+background.w -1, 0, 1);
+        drawImage(background, first, 0, 1);
     }
         
     var drawString = function(string, pos) {
         string = string.toUpperCase();
         var cur = pos.x;
         for(var i=0; i < string.length; i++) {
-            context.drawImage(spritesheet, (string.charCodeAt(i) - 32) * 8, 60, 8, 8, cur, pos.y, 8, 8);
+            context.drawImage(spritesheet, (string.charCodeAt(i) - 32) * 8, 0, 8, 8, cur, pos.y, 8, 8);
             cur += 8;
         }
     }    
@@ -410,7 +410,7 @@ var game = (function(){
         var currentHeight = 0;
         var currentCurve  = 0;
 
-        var zones     = roadParam.length / roadParam.zoneSize;
+        var zones     = roadParam.length;
         while(zones--){
             // Generate current Zone
             var finalHeight;
@@ -467,6 +467,7 @@ var game = (function(){
                 currentStateC = transitionC[currentStateC][0];
             }
         }
+        roadParam.length = roadParam.length * roadParam.zoneSize;
     };
     
     return {
@@ -476,7 +477,7 @@ var game = (function(){
             spritesheet.onload = function(){
                 splashInterval = setInterval(renderSplashFrame, 30);
             };
-            spritesheet.src = "spritesheet.png";
+            spritesheet.src = "spritesheet.high.png";
         }
     }
 }());
