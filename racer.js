@@ -139,7 +139,6 @@ var game = (function(){
         drawString("font: spicypixel.net",{x: 70, y: 140});
         if(keys[32]){
             
-			//$(window).bind('message', updateInputState);
             window.addEventListener('message', updateInputState, false);
 			lastInputTime = +new Date();
 			window.postMessage('input', window.location);
@@ -153,13 +152,13 @@ var game = (function(){
     }
     
 	var updateInputState = function(msg){
-		//console.log(msg);
 		var inputDelta = +new Date() - lastInputTime;
 		// --------------------------
         // -- Update the car state --
         // --------------------------
         if(inputDelta > 22){
-	
+		
+			// 22 is just a tweaked number, no significance
 			while(inputDelta >= 22){
 				
 				inputDelta -= 22;
