@@ -10,6 +10,7 @@ var game = (function(){
     var keys = [];
     var startTime;
     var lastDelta = 0;
+	var lastInputTime = 0;
     var currentTimeString = "";
     
     var roadParam = {
@@ -65,7 +66,13 @@ var game = (function(){
         w: 77,
         h: 38
     };
-    
+    var carSprite = {
+        a: car, 
+        x:125, 
+        y:190
+    };
+
+
     var background = {
         x: 0,
         y: 9,
@@ -131,71 +138,91 @@ var game = (function(){
         drawString("code, art: Selim Arsever",{x: 55, y: 130});
         drawString("font: spicypixel.net",{x: 70, y: 140});
         if(keys[32]){
-            clearInterval(splashInterval);
+            
+			//$(window).bind('message', updateInputState);
+            window.addEventListener('message', updateInputState, false);
+			lastInputTime = +new Date();
+			window.postMessage('input', window.location);
+
+			clearInterval(splashInterval);
             gameInterval = setInterval(renderGameFrame, 30);
-            startTime= new Date();
+			
+			startTime = new Date();
+			
         }
     }
     
+	var updateInputState = function(msg){
+		//console.log(msg);
+		var inputDelta = +new Date() - lastInputTime;
+		// --------------------------
+        // -- Update the car state --
+        // --------------------------
+        if(inputDelta > 22){
+	
+			while(inputDelta >= 22){
+				
+				inputDelta -= 22;
+				
+        		if (Math.abs(lastDelta) > 130){
+		            if (player.speed > 3) {
+		                player.speed -= 0.2;
+		            }
+		        } else {
+		            // read acceleration controls
+		            if (keys[38]) { // 38 up
+		                //player.position += 0.1;
+		                player.speed += player.acceleration;
+		            } else if (keys[40]) { // 40 down
+		                player.speed -= player.breaking;
+		            } else {
+		                player.speed -= player.deceleration;
+		            }
+		        }
+		        player.speed = Math.max(player.speed, 0); //cannot go in reverse
+		        player.speed = Math.min(player.speed, player.maxSpeed); //maximum speed
+		        player.position += player.speed;
+        
+		        // car turning
+		        if (keys[37]) {
+		            // 37 left
+		            if(player.speed > 0){
+		                player.posx -= player.turning;
+		            }
+		            carSprite = {
+		                a: car_4,
+		                x: 117,
+		                y: 190
+		            };
+		        } else if (keys[39]) {
+		            // 39 right
+		            if(player.speed > 0){
+		                player.posx += player.turning;
+		            }
+		            carSprite = {
+		                a: car_8,
+		                x: 125,
+		                y: 190
+		            };
+		        } else {
+		            carSprite = {
+		                a: car, 
+		                x:125, 
+		                y:190
+		            };
+		        }
+			}
+			lastInputTime = +new Date();
+		}
+		window.postMessage('input', window.location);
+	}
+
     //renders one frame
     var renderGameFrame = function(){
         
         // Clean screen
         context.fillStyle = "#dc9";
         context.fillRect(0, 0, render.width, render.height);
-        
-        // --------------------------
-        // -- Update the car state --
-        // --------------------------
-        
-        if (Math.abs(lastDelta) > 130){
-            if (player.speed > 3) {
-                player.speed -= 0.2;
-            }
-        } else {
-            // read acceleration controls
-            if (keys[38]) { // 38 up
-                //player.position += 0.1;
-                player.speed += player.acceleration;
-            } else if (keys[40]) { // 40 down
-                player.speed -= player.breaking;
-            } else {
-                player.speed -= player.deceleration;
-            }
-        }
-        player.speed = Math.max(player.speed, 0); //cannot go in reverse
-        player.speed = Math.min(player.speed, player.maxSpeed); //maximum speed
-        player.position += player.speed;
-        
-        // car turning
-        if (keys[37]) {
-            // 37 left
-            if(player.speed > 0){
-                player.posx -= player.turning;
-            }
-            var carSprite = {
-                a: car_4,
-                x: 117,
-                y: 190
-            };
-        } else if (keys[39]) {
-            // 39 right
-            if(player.speed > 0){
-                player.posx += player.turning;
-            }
-            var carSprite = {
-                a: car_8,
-                x: 125,
-                y: 190
-            };
-        } else {
-            var carSprite = {
-                a: car, 
-                x:125, 
-                y:190
-            };
-        }
-        
 
         drawBackground(-player.posx);
 
@@ -208,6 +235,7 @@ var game = (function(){
         
         if(absoluteIndex >= roadParam.length-render.depthOfField-1){
             clearInterval(gameInterval);
+			window.removeEventListener('message', updateInputState, false);
             drawString("You did it!", {x: 100, y: 20});
             drawString("Press t to tweet your time.", {x: 30, y: 30});
             $(window).keydown(function(e){ if(e.keyCode == 84) {location.href="http://twitter.com/home?status="+escape("I've just raced through #racer10k in "+currentTimeString+"!")}});
