@@ -125,6 +125,71 @@ var game = (function(){
         generateRoad();
     };
     
+	//---------------------------------------------------------------------
+	// Constant Game Loop Machine
+	//---------------------------------------------------------------------
+	var CGLM = (function(){
+		var self = {}
+			,targetFPS = 30
+			,targetInterval = 1000 / targetFPS
+			,avgFps = 0
+			,currentFps = 0
+			,startTime = +new Date()
+			,lastTime = +new Date()
+			,frames = 0
+			,framesDrawn = 0
+			,maxFrameSkip = 5
+			,lastFrameCount = 0
+			,lag = 0
+			,timeOutRef = 0
+			,running = false
+			,tCommands = function(){} // time-dependent callback
+			,nCommands = function(){}; // non-time-dependent callback
+
+		self.main = function(){
+			var d = +new Date()
+				,currentFrameCount = Math.round( (d - startTime) / 1000 * targetFPS )
+				,deltaFrames = currentFrameCount - lastFrameCount
+				,deltaTimePerFrame = (d - lastTime) / deltaFrames
+				,i = 0;
+
+			if(deltaFrames > 0){
+				// calculate lag, fps, and avg fps
+				lag = Math.round(10 * frames / framesDrawn - 10) / 10;
+				avgFps = (1000 / ((d - startTime) / framesDrawn)).toFixed(2);
+				currentFps = (1000 / ((d - lastTime) / deltaFrames)).toFixed(2);
+
+				// main time-dependent game commands here, like physics
+				for(; i < deltaFrames && i < maxFrameSkip; i++){ tCommands(deltaTimePerFrame); }
+
+				// non-time dependent commands here, like drawing
+				nCommands(d - lastTime, currentFps, avgFps, lag);
+
+				// save current date as last date for next round
+				lastTime = d;
+				// cleanup
+				frames += deltaFrames;
+				framesDrawn++;
+				lastFrameCount = currentFrameCount;
+			}
+			if(running === true) timeOutRef = setTimeout(self.main, targetInterval);
+		}
+		self.register = function(timeDependent, normal){
+			tCommands = timeDependent !== undefined ? timeDependent : tCommands;
+			nCommands = normal !== undefined ? normal : nCommands;
+		}
+		self.start = function(){ 
+			running = true; self.main(); 
+			//console.log("beginning execution"); 
+		}
+		self.stop = function(){ 
+			clearTimeout(timeOutRef); running = false;
+			//console.log("execution halted"); 
+		}
+
+		return self;
+	})();
+
     //renders Splash Frame
     var renderSplashFrame = function(){
         context.fillStyle = "rgb(0,0,0)";
@@ -139,19 +204,25 @@ var game = (function(){
         drawString("font: spicypixel.net",{x: 70, y: 140});
         if(keys[32]){
             
-            window.addEventListener('message', updateInputState, false);
+			CGLM.register(function(){
+				updateInputState();
+			}, function(){
+				renderGameFrame();
+			});
+
+            //window.addEventListener('message', updateInputState, false);
 			lastInputTime = +new Date();
-			window.postMessage('input', window.location);
+			//window.postMessage('input', window.location);
 
 			clearInterval(splashInterval);
-            gameInterval = setInterval(renderGameFrame, 30);
+            //gameInterval = setInterval(renderGameFrame, 30);
 			
 			startTime = new Date();
-			
+			CGLM.start();
         }
     }
     
-	var updateInputState = function(msg){
+	var updateInputState = function(){
 		var inputDelta = +new Date() - lastInputTime;
 		// --------------------------
         // -- Update the car state --
@@ -213,7 +284,6 @@ var game = (function(){
 			}
 			lastInputTime = +new Date();
 		}
-		window.postMessage('input', window.location);
 	}
 
     //renders one frame
@@ -233,8 +303,9 @@ var game = (function(){
         var absoluteIndex = Math.floor(player.position / roadSegmentSize);
         
         if(absoluteIndex >= roadParam.length-render.depthOfField-1){
-            clearInterval(gameInterval);
-			window.removeEventListener('message', updateInputState, false);
+            //clearInterval(gameInterval);
+			CGLM.stop();
+			//window.removeEventListener('message', updateInputState, false);
             drawString("You did it!", {x: 100, y: 20});
             drawString("Press t to tweet your time.", {x: 30, y: 30});
             $(window).keydown(function(e){ if(e.keyCode == 84) {location.href="http://twitter.com/home?status="+escape("I've just raced through #racer10k in "+currentTimeString+"!")}});
